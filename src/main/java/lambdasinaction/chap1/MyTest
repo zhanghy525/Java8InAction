@@ -1,0 +1,193 @@
+package lambdasinaction.chap1;
+
+import org.junit.Test;
+
+import java.util.*;
+import java.util.function.Predicate;
+
+/**
+ * 回顾传统写法
+ */
+public class MyTest{
+
+    /**
+     *  1.测试传统写法
+     */
+    @Test
+    public void test() {
+        List<Apple> test = Arrays.asList(new Apple(50,"green"),new Apple(100,"yellow"));
+        List<Apple> result = filterApples(test);
+        System.out.println(result);
+    }
+
+    /**
+     *  1.传统写法
+     */
+    public static List<Apple> filterApples(List<Apple> data) {
+        List<Apple> list = new ArrayList<>();
+        for(Apple apple : data) {
+            if("red".equals(apple.getColor())) {
+                list.add(apple);
+            }
+        }
+        return list;
+    }
+
+    /**
+     * 2.测试传统 加 抽象参数化条件
+     */
+    @Test
+    public void test2() {
+        List<Apple> test = Arrays.asList(new Apple(50,"green"),new Apple(100,"yellow"));
+        List<Apple> result = filterApples(test,"red");
+        System.out.println(result);
+    }
+
+    public static List<Apple> filterApples(List<Apple> list, String color) {
+        List<Apple> result = new ArrayList<>();
+        for(Apple apple : list) {
+            if(color.equals(apple.getColor())) {
+                list.add(apple);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 3.支持更多属性的写法,模拟代码底层
+     */
+    //3.1 创造一个提供test()的函数式接口
+    public interface ApplePredicate {
+        public boolean test(Apple apple);
+    }
+    //3.2根据不同属性实现不同的比较方法逻辑 -》测略模式
+    public class AppleColorPredicate implements ApplePredicate {
+        @Override
+        public boolean test(Apple apple) {
+            return "green".equals(apple.getColor());
+        }
+    }
+    public class AppleWeightPredicate implements ApplePredicate {
+        @Override
+        public boolean test(Apple apple) {
+            return apple.getWeight() > 150;
+        }
+    }
+    // 3.3 提供一把万能钥匙
+    public static List<Apple> filterApples(List<Apple> list, ApplePredicate applePredicate) {
+        List<Apple> result = new ArrayList<>();
+        for (Apple apple : list) {
+            if(applePredicate.test(apple)) {
+                result.add(apple);
+            }
+        }
+        return result;
+    }
+    //3.4现实中的锁是颜色比较，那么
+    @Test
+    public void test3() {
+        List<Apple> test = Arrays.asList(new Apple(50,"green"),new Apple(100,"yellow"));
+        List<Apple> result = filterApples(test,new AppleColorPredicate());
+        //或者动态添加一把锁
+        List<Apple> result2 = filterApples(test, new ApplePredicate() {
+            @Override
+            public boolean test(Apple apple) {
+                return "red".equals(apple.getColor()) && apple.getWeight() > 40;
+            }
+        });
+
+        System.out.println(result);
+        System.out.println(result2);
+    }
+
+    /**
+     * 4.3版本的lambada改造
+     */
+    @Test
+    public void test4() {
+        List<Apple> test =
+                Arrays.asList(new Apple(50,"green"),new Apple(100,"yellow"));
+        List<Apple> result2 = filterApples(test,
+                //直接进行代码传递
+                (apple) -> ("green".equals(apple.getColor()) && apple.getWeight() > 40));
+        System.out.println(result2);
+    }
+
+    /**
+     * 5 泛型改造
+     */
+    //5.1一个泛型接口
+    public interface Predicate<T> {
+        public boolean test(T t);
+    }
+    //5.2提供一个泛型化的筛选机
+    public static <T> List<T> filterApples2(List<T> list,Predicate<T> predicate) {
+        List<T> result = new ArrayList<>();
+        for (T t : list) {
+            if(predicate.test(t)) {
+                result.add(t);
+            }
+        }
+        return result;
+    }
+    //5.3需要表明对象类型Apple
+    @Test
+    public void test5() {
+        List<Apple> test =
+                Arrays.asList(new Apple(50,"green"),new Apple(100,"yellow"));
+        List<Apple> result = filterApples2(test,
+                (Apple apple)->("green".equals(apple.getColor()) && apple.getWeight() > 40));
+        System.out.println(result);
+    }
+
+    /**
+     * lambada对象排序
+     */
+    @Test
+    public void test6() {
+        List<Apple> test =
+                Arrays.asList(new Apple(100,"green"),new Apple(50,"yellow"));
+        test.sort((a,b)->(a.getWeight().compareTo(b.getWeight())));
+        System.out.println(test);
+    }
+
+    /**
+     * Runnable???
+     * Thread t = new Thread(()->(System.out.println()))
+     */
+
+    public static class Apple {
+        private int weight = 0;
+        private String color = "";
+
+        public Apple(int weight, String color){
+            this.weight = weight;
+            this.color = color;
+        }
+
+        public Integer getWeight() {
+            return weight;
+        }
+
+        public void setWeight(Integer weight) {
+            this.weight = weight;
+        }
+
+        public String getColor() {
+            return color;
+        }
+
+        public void setColor(String color) {
+            this.color = color;
+        }
+
+        @Override
+        public String toString() {
+            return "Apple{" +
+                    "color='" + color + '\'' +
+                    ", weight=" + weight +
+                    '}';
+        }
+    }
+
+}
